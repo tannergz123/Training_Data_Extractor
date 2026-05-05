@@ -14,10 +14,10 @@ describe('transformCases', () => {
                     caseDefinitionId: 5,
                     reportingEventNumber: '4295294714',
                 },
-                caseApprovalStatus: 'DRAFT',
+                caseApprovalStatus: { status: 'DRAFT' },
                 caseStatus: { id: 1, statusAttrId: 12344 },
                 entityPermissions: [
-                    { roleName: 'ADMIN', operationType: 'MANAGE' },
+                    { roleId: 999, operationType: 'MANAGE' },
                 ],
             },
         ];
@@ -33,7 +33,7 @@ describe('transformCases', () => {
             reportingEventNumber: '4295294714',
             approvalStatus: 'DRAFT',
             statusAttributeDisplayAbbreviation: '12344',
-            entityPermissions: [{ roleName: 'ADMIN', operationType: 'MANAGE' }],
+            entityPermissions: [{ roleName: '999', operationType: 'MANAGE' }],
             personProfileIds: [],
             reportRens: ['4295294714'],
             tasks: [],
@@ -44,7 +44,7 @@ describe('transformCases', () => {
         const caseDetails: ApiCaseDetailsT[] = [
             {
                 theCase: { id: 200, title: 'Test Case' },
-                caseApprovalStatus: 'APPROVED',
+                caseApprovalStatus: { status: 'APPROVED' },
             },
         ];
 
@@ -64,6 +64,32 @@ describe('transformCases', () => {
         expect(cases[0].approvalStatus).toBe('DRAFT');
     });
 
+    it('extracts status from caseApprovalStatus object', () => {
+        const caseDetails: ApiCaseDetailsT[] = [
+            {
+                theCase: { id: 350, title: 'Object Status' },
+                caseApprovalStatus: { status: 'SUBMITTED' },
+            },
+        ];
+
+        const cases = transformCases(caseDetails, 'REN', [], createIdGenerator());
+
+        expect(cases[0].approvalStatus).toBe('SUBMITTED');
+    });
+
+    it('handles caseApprovalStatus as plain string', () => {
+        const caseDetails: ApiCaseDetailsT[] = [
+            {
+                theCase: { id: 360, title: 'String Status' },
+                caseApprovalStatus: 'CLOSED',
+            },
+        ];
+
+        const cases = transformCases(caseDetails, 'REN', [], createIdGenerator());
+
+        expect(cases[0].approvalStatus).toBe('CLOSED');
+    });
+
     it('omits statusAttributeDisplayAbbreviation when no statusAttrId', () => {
         const caseDetails: ApiCaseDetailsT[] = [
             { theCase: { id: 400, title: 'Minimal' } },
@@ -74,14 +100,14 @@ describe('transformCases', () => {
         expect(cases[0].statusAttributeDisplayAbbreviation).toBeUndefined();
     });
 
-    it('filters out entity permissions with missing fields', () => {
+    it('maps entityPermissions with roleId to string roleName', () => {
         const caseDetails: ApiCaseDetailsT[] = [
             {
                 theCase: { id: 500, title: 'Perms Test' },
                 entityPermissions: [
-                    { roleName: 'ADMIN', operationType: 'MANAGE' },
-                    { roleName: undefined, operationType: 'READ' },
-                    { roleName: 'USER' },
+                    { roleId: 123, operationType: 'MANAGE' },
+                    { roleId: 456, operationType: 'READ' },
+                    { operationType: undefined } as never,
                 ],
             },
         ];
@@ -89,7 +115,8 @@ describe('transformCases', () => {
         const cases = transformCases(caseDetails, 'REN', [], createIdGenerator());
 
         expect(cases[0].entityPermissions).toEqual([
-            { roleName: 'ADMIN', operationType: 'MANAGE' },
+            { roleName: '123', operationType: 'MANAGE' },
+            { roleName: '456', operationType: 'READ' },
         ]);
     });
 

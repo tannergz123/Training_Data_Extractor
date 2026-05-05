@@ -153,9 +153,9 @@ export type ApiCaseDetailsT = {
         reportingEventNumber?: string;
     };
     caseStatus?: { id: number; statusAttrId?: number };
-    caseRoleLinks?: Array<{ roleName?: string; operationType?: string }>;
-    entityPermissions?: Array<{ roleName?: string; operationType?: string }>;
-    caseApprovalStatus?: string;
+    caseRoleLinks?: Array<{ roleId?: number; caseRoleAttrId?: number }>;
+    entityPermissions?: Array<{ roleId?: number; entityType?: string; operationType?: string }>;
+    caseApprovalStatus?: { status?: string } | string;
 };
 
 export type BlacksmithCaseT = {

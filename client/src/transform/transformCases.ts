@@ -1,5 +1,11 @@
 import type { ApiCaseDetailsT, BlacksmithCaseT, IdGeneratorT } from './transformTypes';
 
+function extractApprovalStatus(caseApprovalStatus: ApiCaseDetailsT['caseApprovalStatus']): string {
+    if (typeof caseApprovalStatus === 'string') return caseApprovalStatus;
+    if (caseApprovalStatus && typeof caseApprovalStatus === 'object') return caseApprovalStatus.status ?? 'DRAFT';
+    return 'DRAFT';
+}
+
 export function transformCases(
     caseDetails: ApiCaseDetailsT[],
     reportRen: string,
@@ -20,14 +26,16 @@ export function transformCases(
             localId: theCase.localId ?? '',
             caseDefinitionName: theCase.title ?? '',
             reportingEventNumber: theCase.reportingEventNumber ?? reportRen,
-            approvalStatus: detail.caseApprovalStatus ?? 'DRAFT',
+            approvalStatus: extractApprovalStatus(detail.caseApprovalStatus),
             ...(detail.caseStatus?.statusAttrId != null
                 ? { statusAttributeDisplayAbbreviation: String(detail.caseStatus.statusAttrId) }
                 : {}),
             entityPermissions: (detail.entityPermissions ?? [])
-                .filter((p): p is { roleName: string; operationType: string } =>
-                    p.roleName != null && p.operationType != null)
-                .map((p) => ({ roleName: p.roleName, operationType: p.operationType })),
+                .filter((p) => p.operationType != null)
+                .map((p) => ({
+                    roleName: p.roleId != null ? String(p.roleId) : '',
+                    operationType: p.operationType ?? '',
+                })),
             personProfileIds,
             reportRens: [theCase.reportingEventNumber ?? reportRen].filter(Boolean),
             tasks: [],
