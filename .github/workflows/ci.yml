@@ -1,0 +1,119 @@
+name: ci
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.sha) }}
+  cancel-in-progress: true
+
+jobs:
+  check-paths:
+    name: Check paths
+    runs-on: ubuntu-latest
+    outputs:
+      any-change: ${{ steps.filter.outputs.any-change }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        with:
+          filters: |
+            any-change:
+              - ".github/workflows/ci.yml"
+              - "client/**"
+              - "server/**"
+              - "**/*.ts"
+              - "**/*.tsx"
+              - "Dockerfile"
+              - ".env.example"
+
+  build-and-publish:
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    needs: [check-paths]
+    if: needs.check-paths.outputs.any-change == 'true' || github.event_name == 'workflow_dispatch'
+    name: Build and publish
+    runs-on: ubuntu-latest
+    outputs:
+      build-version: ${{ steps.get-version.outputs.BUILD_VERSION }}
+      mutable-tag: ${{ steps.get-version.outputs.mutable-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Node and npm
+        uses: mark43/build-scripts/.github/actions/setup-node-npm@v5.3.1
+        with:
+          artifactory-credential: ${{ secrets.ARTIFACTORY_CI_API_KEY }}
+          artifactory-username: ${{ vars.ARTIFACTORY_CI_USERNAME }}
+          node-version-file: '.node-version'
+          node-cache-dependency-path: 'client/package.json'
+          extra-cache-key: "modules-${{ hashFiles('client/package-lock.json') }}"
+          extra-cache-path: 'client/node_modules'
+
+      - name: Install dependencies
+        run: |
+          cp ~/.npmrc client/.npmrc
+          cd client && npm ci
+
+      - name: Build
+        run: cd client && npm run build
+
+      - name: Get version
+        id: get-version
+        uses: mark43/build-scripts/.github/actions/get-version@48ebcc3e00e73380262ba7410b3e971a7e935a57
+
+      - name: Docker login
+        uses: docker/login-action@v4
+        with:
+          registry: docker.repository.mark43.io
+          username: ${{ vars.ARTIFACTORY_CI_USERNAME }}
+          password: ${{ secrets.ARTIFACTORY_CI_API_KEY }}
+
+      - name: Build and publish Docker image
+        uses: mark43/build-scripts/.github/actions/build-docker-wrapper@1993ec368d52a1141b8eeae970e16e6c7a37d50f
+        with:
+          artifactory-username: ${{ vars.ARTIFACTORY_CI_USERNAME }}
+          artifactory-password: ${{ secrets.ARTIFACTORY_CI_API_KEY }}
+          docker-image: marketplace/training-data-extractor
+          docker-context: .
+          docker-file: Dockerfile
+          docker-multiarch: true
+          docker-push: true
+          healthcheck-test: false
+          docker-healthcheck-service: required-dummy-value
+          docker-tags: |
+            docker.repository.mark43.io/marketplace/training-data-extractor:${{ steps.get-version.outputs.BUILD_VERSION }},
+            docker.repository.mark43.io/marketplace/training-data-extractor:${{ steps.get-version.outputs.mutable-tag }}
+          build-version: ${{ steps.get-version.outputs.BUILD_VERSION }}
+
+  build-cop:
+    name: Build cop
+    runs-on: ubuntu-latest
+    needs: [build-and-publish]
+    if: always()
+    steps:
+      - run: echo "Look at the env for NEEDS context"
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+
+      - if: contains(needs.*.result, 'cancelled')
+        run: |
+          echo "::error::BuildCop detected a job was cancelled"
+          exit 1
+
+      - if: contains(needs.*.result, 'failure')
+        run: |
+          echo "::error::BuildCop detected a job failure"
+          exit 1

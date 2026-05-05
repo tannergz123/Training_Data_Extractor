@@ -1,0 +1,23 @@
+{
+  "name": "training-data-extractor-server",
+  "version": "1.0.0",
+  "description": "Extract RMS report data into Blacksmith-compatible JSON files for training tenant population",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "axios": "1.13.6",
+    "dotenv": "16.4.5",
+    "express": "4.21.2",
+    "express-rate-limit": "7.5.0",
+    "helmet": "8.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

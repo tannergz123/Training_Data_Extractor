@@ -1,0 +1,28 @@
+{
+  "name": "training-data-extractor-client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Extract RMS report data into Blacksmith-compatible JSON files for training tenant population",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "arc": "10.98.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.5",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.2",
+    "typescript": "5.5.4",
+    "vite": "5.4.10"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
