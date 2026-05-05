@@ -65,6 +65,7 @@ export type ApiReportT = {
     reportType?: string;
     recordNumber?: string;
     description?: string;
+    crimeDescription?: string;
     isSealed?: boolean;
     isNarrativeSealed?: boolean;
     isLegacyReport?: boolean;
