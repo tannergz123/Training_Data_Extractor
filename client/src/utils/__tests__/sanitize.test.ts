@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { sanitizeText, sanitizeEmailSubject, sanitizeUrl } from '../sanitize';
 
 describe('sanitizeText', () => {

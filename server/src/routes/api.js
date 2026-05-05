@@ -106,6 +106,10 @@ function logError(label, err) {
 
 // ---------------------------------------------------------------------------
 // V2 Partnerships API proxy routes
+//
+// Two auth modes:
+//   1. Standard proxy (GET routes) — uses M43AUTH cookie or env MARK43_API_TOKEN
+//   2. User-provided credentials (POST /extract) — user supplies tenantUrl + apiToken
 // ---------------------------------------------------------------------------
 
 router.get('/reports/:reportId', async (req, res) => {
@@ -190,6 +194,56 @@ router.get('/form/:formId/version/:formVersion/contract', async (req, res) => {
         if (err.response) return res.status(err.response.status).json(err.response.data);
         res.status(500).json({ success: false, message: err.message });
     }
+});
+
+// ---------------------------------------------------------------------------
+// Batch extraction — user provides tenant URL, API token, and report IDs
+// ---------------------------------------------------------------------------
+
+function isValidTenantUrl(url) {
+    if (typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    return /^https:\/\/.+\.mark43\.com$/i.test(trimmed) || /^https:\/\/.+\.mark43\.io$/i.test(trimmed);
+}
+
+router.post('/extract', async (req, res) => {
+    const { tenantUrl, apiToken, reportIds } = pick(req.body, ['tenantUrl', 'apiToken', 'reportIds']);
+
+    if (!isNonEmptyString(tenantUrl) || !isValidTenantUrl(tenantUrl)) {
+        return res.status(400).json({ success: false, message: 'Missing or invalid tenantUrl (must be https://*.mark43.com or https://*.mark43.io)' });
+    }
+    if (!isNonEmptyString(apiToken)) {
+        return res.status(400).json({ success: false, message: 'Missing or invalid apiToken' });
+    }
+    if (!Array.isArray(reportIds) || reportIds.length === 0) {
+        return res.status(400).json({ success: false, message: 'reportIds must be a non-empty array' });
+    }
+
+    const baseUrl = tenantUrl.trim().replace(/\/+$/, '');
+    const headers = { 'x-api-key': apiToken, 'Content-Type': 'application/json' };
+
+    const results = [];
+
+    for (const reportId of reportIds) {
+        const id = String(reportId).trim();
+        if (!id) continue;
+
+        const url = `${baseUrl}/rms/api/v2/openapi/reports/${encodeURIComponent(id)}`;
+        logRequest('extract', 'GET', url, headers, {}, undefined);
+
+        try {
+            const response = await axios.get(url, { headers, timeout: 30000 });
+            logResponse('extract', response.status, response.data);
+            results.push({ reportId: id, success: true, data: response.data });
+        } catch (err) {
+            logError('extract', err);
+            const status = err.response?.status || 500;
+            const message = err.response?.data?.message || err.message;
+            results.push({ reportId: id, success: false, status, message });
+        }
+    }
+
+    res.json({ success: true, results });
 });
 
 module.exports = router;

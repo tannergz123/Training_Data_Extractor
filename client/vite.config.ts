@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
@@ -29,5 +30,8 @@ export default defineConfig({
     alias: {
       '@arc/pdf-viewer': path.resolve(__dirname, 'src/stubs/empty.ts'),
     },
+  },
+  test: {
+    include: ['src/**/__tests__/**/*.test.ts'],
   },
 });
