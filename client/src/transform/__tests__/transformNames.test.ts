@@ -110,4 +110,68 @@ describe('transformNames', () => {
         expect(names[0].personProfile.raceAttributeDisplayAbbreviation).toBeUndefined();
         expect(names[0].personProfile.isJuvenile).toBe(false);
     });
+
+    it('produces CASE-owned copies when caseBlacksmithIds provided', () => {
+        const people: ApiInvolvedPersonT[] = [
+            {
+                personProfile: {
+                    firstName: 'John',
+                    lastName: 'Smith',
+                    sex: { displayAbbreviation: '02' },
+                    race: { displayAbbreviation: 'B' },
+                },
+            },
+        ];
+
+        const { names, personIdMap } = transformNames(
+            people, 'REN-123', createIdGenerator(), ['C100'],
+        );
+
+        expect(names).toHaveLength(3);
+        expect(personIdMap[0].caseIds).toHaveLength(1);
+
+        const caseCopy = names[2];
+        expect(caseCopy.personProfile.owner.entityType).toBe('CASE');
+        expect(caseCopy.personProfile.owner.ownerId).toBe('C100');
+        expect(caseCopy.personProfile.masterPersonId).toBe('10001');
+    });
+
+    it('produces case copies for each case ID per person', () => {
+        const people: ApiInvolvedPersonT[] = [
+            { personProfile: { firstName: 'Alice', lastName: 'A' } },
+        ];
+
+        const { names, personIdMap } = transformNames(
+            people, 'REN-X', createIdGenerator(), ['C1', 'C2'],
+        );
+
+        // master + report + 2 case copies = 4
+        expect(names).toHaveLength(4);
+        expect(personIdMap[0].caseIds).toHaveLength(2);
+
+        const caseCopies = names.filter(
+            (n) => n.personProfile.owner.entityType === 'CASE',
+        );
+        expect(caseCopies).toHaveLength(2);
+        expect(caseCopies[0].personProfile.owner.ownerId).toBe('C1');
+        expect(caseCopies[1].personProfile.owner.ownerId).toBe('C2');
+    });
+
+    it('produces no case copies when caseBlacksmithIds is empty', () => {
+        const people: ApiInvolvedPersonT[] = [
+            { personProfile: { firstName: 'Bob', lastName: 'B' } },
+        ];
+
+        const { names } = transformNames(people, 'REN-Y', createIdGenerator(), []);
+        expect(names).toHaveLength(2);
+    });
+
+    it('produces no case copies when caseBlacksmithIds is undefined', () => {
+        const people: ApiInvolvedPersonT[] = [
+            { personProfile: { firstName: 'Bob', lastName: 'B' } },
+        ];
+
+        const { names } = transformNames(people, 'REN-Y', createIdGenerator());
+        expect(names).toHaveLength(2);
+    });
 });

@@ -83,7 +83,7 @@ export type ApiReportT = {
 // ---------------------------------------------------------------------------
 
 type OwnerT = {
-    entityType: 'PERSON_PROFILE' | 'REPORT';
+    entityType: 'PERSON_PROFILE' | 'REPORT' | 'CASE';
     ownerId?: string;
     reportRen?: string;
 };
@@ -144,6 +144,20 @@ export type BlacksmithReportT = {
     personProfileIds: string[];
 };
 
+export type ApiCaseDetailsT = {
+    theCase: {
+        id: number;
+        title?: string;
+        localId?: string;
+        caseDefinitionId?: number;
+        reportingEventNumber?: string;
+    };
+    caseStatus?: { id: number; statusAttrId?: number };
+    caseRoleLinks?: Array<{ roleName?: string; operationType?: string }>;
+    entityPermissions?: Array<{ roleName?: string; operationType?: string }>;
+    caseApprovalStatus?: string;
+};
+
 export type BlacksmithCaseT = {
     id: string;
     title: string;
@@ -151,8 +165,11 @@ export type BlacksmithCaseT = {
     caseDefinitionName: string;
     reportingEventNumber: string;
     approvalStatus: string;
+    statusAttributeDisplayAbbreviation?: string;
+    entityPermissions: Array<{ roleName: string; operationType: string }>;
     personProfileIds: string[];
     reportRens: string[];
+    tasks: Array<Record<string, unknown>>;
 };
 
 export type TransformResultT = {

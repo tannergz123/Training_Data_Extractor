@@ -3,15 +3,18 @@ import type { ApiInvolvedPersonT, BlacksmithNameEntryT, IdGeneratorT } from './t
 type PersonIdsT = {
     masterId: string;
     reportId: string;
+    caseIds: string[];
 };
 
 export function transformNames(
     involvedPeople: ApiInvolvedPersonT[],
     reportRen: string,
     nextId: IdGeneratorT,
+    caseBlacksmithIds?: string[],
 ): { names: BlacksmithNameEntryT[]; personIdMap: PersonIdsT[] } {
     const masters: BlacksmithNameEntryT[] = [];
     const reportCopies: BlacksmithNameEntryT[] = [];
+    const caseCopies: BlacksmithNameEntryT[] = [];
     const personIdMap: PersonIdsT[] = [];
 
     for (const person of involvedPeople) {
@@ -20,6 +23,7 @@ export function transformNames(
 
         const masterId = nextId();
         const reportId = nextId();
+        const personCaseIds: string[] = [];
 
         const baseFields = {
             firstName: profile.firstName,
@@ -51,8 +55,20 @@ export function transformNames(
             },
         });
 
-        personIdMap.push({ masterId, reportId });
+        for (const caseId of caseBlacksmithIds ?? []) {
+            const caseCopyId = nextId();
+            personCaseIds.push(caseCopyId);
+            caseCopies.push({
+                personProfile: {
+                    ...baseFields,
+                    id: caseCopyId,
+                    owner: { entityType: 'CASE', ownerId: caseId },
+                },
+            });
+        }
+
+        personIdMap.push({ masterId, reportId, caseIds: personCaseIds });
     }
 
-    return { names: [...masters, ...reportCopies], personIdMap };
+    return { names: [...masters, ...reportCopies, ...caseCopies], personIdMap };
 }

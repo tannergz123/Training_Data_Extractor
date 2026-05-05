@@ -1,9 +1,10 @@
-import type { ApiReportT } from '../transform/transformTypes';
+import type { ApiReportT, ApiCaseDetailsT } from '../transform/transformTypes';
 
 export type ReportResultSuccessT = {
     reportId: string;
     success: true;
     data: ApiReportT;
+    cases: ApiCaseDetailsT[];
 };
 
 export type ReportResultErrorT = {

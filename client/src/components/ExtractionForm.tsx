@@ -3,6 +3,7 @@ import { Button, Card, CardBody, Flex, FormControl, InlineBanner, Input, Text, T
 import { extractReports } from '../services/extractionApi';
 import { transformToBlacksmith } from '../transform';
 import type { TransformResultT, ApiReportT } from '../transform';
+import type { ApiCaseDetailsT } from '../transform/transformTypes';
 import { JsonPreview } from './JsonPreview';
 import { downloadJson } from '../utils/download';
 
@@ -34,11 +35,13 @@ export function ExtractionForm() {
         try {
             const response = await extractReports(tenantUrl.trim(), apiToken.trim(), ids);
             const successfulReports: ApiReportT[] = [];
+            const reportCases: ApiCaseDetailsT[][] = [];
             const errors: string[] = [];
 
             for (const r of response.results) {
                 if (r.success) {
                     successfulReports.push(r.data);
+                    reportCases.push(r.cases ?? []);
                 } else {
                     errors.push(`Report ${r.reportId}: ${r.message} (${r.status})`);
                 }
@@ -49,7 +52,7 @@ export function ExtractionForm() {
                 return;
             }
 
-            const result = transformToBlacksmith(successfulReports, agencyOri.trim());
+            const result = transformToBlacksmith(successfulReports, agencyOri.trim(), reportCases);
             setState({ phase: 'done', result, errors });
         } catch (err) {
             setState({
@@ -212,7 +215,6 @@ export function ExtractionForm() {
                         title="cases.json"
                         filename="cases.json"
                         data={state.result.cases}
-                        note="Empty for MVP — case extraction coming in Phase 2"
                     />
                 </VStack>
             )}

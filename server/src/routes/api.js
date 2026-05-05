@@ -98,6 +98,42 @@ function logError(label, err) {
 }
 
 // ---------------------------------------------------------------------------
+// Case fetching helpers
+// ---------------------------------------------------------------------------
+
+async function fetchCasesForReport(baseUrl, headers, reportId) {
+    const cases = [];
+
+    try {
+        const relatedUrl = `${baseUrl}/rms/api/reports/${encodeURIComponent(reportId)}/related_entities`;
+        logRequest('related_entities', 'GET', relatedUrl, headers, {}, undefined);
+        const relatedResp = await axios.get(relatedUrl, { headers, timeout: 30000 });
+        logResponse('related_entities', relatedResp.status, relatedResp.data);
+
+        const linkedCaseIds = relatedResp.data?.data?.linkedCaseIds ?? [];
+        if (linkedCaseIds.length === 0) return cases;
+
+        for (const caseId of linkedCaseIds) {
+            try {
+                const caseUrl = `${baseUrl}/rms/api/cases/${encodeURIComponent(caseId)}/details`;
+                logRequest('case_details', 'GET', caseUrl, headers, {}, undefined);
+                const caseResp = await axios.get(caseUrl, { headers, timeout: 30000 });
+                logResponse('case_details', caseResp.status, caseResp.data);
+                if (caseResp.data?.data) {
+                    cases.push(caseResp.data.data);
+                }
+            } catch (err) {
+                logError('case_details', err);
+            }
+        }
+    } catch (err) {
+        logError('related_entities', err);
+    }
+
+    return cases;
+}
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
 
@@ -202,7 +238,7 @@ router.get('/form/:formId/version/:formVersion/contract', async (req, res) => {
 
 function isValidTenantUrl(url) {
     if (typeof url !== 'string') return false;
-    const trimmed = url.trim();
+    const trimmed = url.trim().replace(/\/+$/, '');
     return /^https:\/\/.+\.mark43\.com$/i.test(trimmed) || /^https:\/\/.+\.mark43\.io$/i.test(trimmed);
 }
 
@@ -228,13 +264,16 @@ router.post('/extract', async (req, res) => {
         const id = String(reportId).trim();
         if (!id) continue;
 
-        const url = `${baseUrl}/rms/api/v2/openapi/reports/${encodeURIComponent(id)}`;
-        logRequest('extract', 'GET', url, headers, {}, undefined);
+        const reportUrl = `${baseUrl}/rms/api/v2/openapi/reports/${encodeURIComponent(id)}`;
+        logRequest('extract', 'GET', reportUrl, headers, {}, undefined);
 
         try {
-            const response = await axios.get(url, { headers, timeout: 30000 });
+            const response = await axios.get(reportUrl, { headers, timeout: 30000 });
             logResponse('extract', response.status, response.data);
-            results.push({ reportId: id, success: true, data: response.data });
+
+            const cases = await fetchCasesForReport(baseUrl, headers, id);
+
+            results.push({ reportId: id, success: true, data: response.data, cases });
         } catch (err) {
             logError('extract', err);
             const status = err.response?.status || 500;

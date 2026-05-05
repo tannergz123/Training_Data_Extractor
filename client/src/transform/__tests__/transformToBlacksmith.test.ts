@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { transformToBlacksmith } from '../transformToBlacksmith';
-import type { ApiReportT } from '../transformTypes';
+import type { ApiReportT, ApiCaseDetailsT } from '../transformTypes';
 
 describe('transformToBlacksmith', () => {
     const fullReport: ApiReportT = {
@@ -91,7 +91,7 @@ describe('transformToBlacksmith', () => {
         expect(result.reports).toHaveLength(1);
     });
 
-    it('produces empty cases for MVP', () => {
+    it('produces empty cases when no case data provided', () => {
         const result = transformToBlacksmith([fullReport], 'blacksmithori');
         expect(result.cases).toEqual([]);
     });
@@ -204,5 +204,94 @@ describe('transformToBlacksmith', () => {
         for (const copy of johnCopies) {
             expect(copy.personProfile.masterPersonId).toBe(masterPersonId);
         }
+    });
+
+    describe('with case data', () => {
+        const caseDetails: ApiCaseDetailsT[] = [
+            {
+                theCase: {
+                    id: 100,
+                    title: 'Homicide Case',
+                    localId: '19-000001',
+                    reportingEventNumber: '4295294714',
+                },
+                caseApprovalStatus: 'DRAFT',
+                entityPermissions: [
+                    { roleName: 'ADMIN', operationType: 'MANAGE' },
+                ],
+            },
+        ];
+
+        it('produces case entries when case data provided', () => {
+            const result = transformToBlacksmith([fullReport], 'ori', [caseDetails]);
+            expect(result.cases).toHaveLength(1);
+            expect(result.cases[0].title).toBe('Homicide Case');
+            expect(result.cases[0].localId).toBe('19-000001');
+        });
+
+        it('produces CASE-owned name copies when cases present', () => {
+            const result = transformToBlacksmith([fullReport], 'ori', [caseDetails]);
+
+            const caseCopies = result.names.filter(
+                (n) => n.personProfile.owner.entityType === 'CASE',
+            );
+            expect(caseCopies).toHaveLength(2);
+        });
+
+        it('links case personProfileIds to CASE-owned names', () => {
+            const result = transformToBlacksmith([fullReport], 'ori', [caseDetails]);
+
+            const casePersonIds = result.cases[0].personProfileIds;
+            expect(casePersonIds).toHaveLength(2);
+
+            for (const id of casePersonIds) {
+                const name = result.names.find(
+                    (n) => n.personProfile.id === id && n.personProfile.owner.entityType === 'CASE',
+                );
+                expect(name).toBeDefined();
+            }
+        });
+
+        it('case personProfileIds share masterPersonId with master copies', () => {
+            const result = transformToBlacksmith([fullReport], 'ori', [caseDetails]);
+
+            const caseCopies = result.names.filter(
+                (n) => n.personProfile.owner.entityType === 'CASE',
+            );
+            for (const caseCopy of caseCopies) {
+                const master = result.names.find(
+                    (n) =>
+                        n.personProfile.owner.entityType === 'PERSON_PROFILE' &&
+                        n.personProfile.id === caseCopy.personProfile.masterPersonId,
+                );
+                expect(master).toBeDefined();
+            }
+        });
+
+        it('handles report with no cases in mixed array', () => {
+            const reportNoCases: ApiReportT = {
+                reportingEventNumber: 'REN-2',
+                involvedPeople: [
+                    { personProfile: { firstName: 'Solo', lastName: 'Person' } },
+                ],
+            };
+
+            const result = transformToBlacksmith(
+                [fullReport, reportNoCases],
+                'ori',
+                [caseDetails, []],
+            );
+
+            expect(result.cases).toHaveLength(1);
+            const caseCopies = result.names.filter(
+                (n) => n.personProfile.owner.entityType === 'CASE',
+            );
+            expect(caseCopies).toHaveLength(2);
+        });
+
+        it('handles undefined reportCases parameter', () => {
+            const result = transformToBlacksmith([fullReport], 'ori', undefined);
+            expect(result.cases).toEqual([]);
+        });
     });
 });
