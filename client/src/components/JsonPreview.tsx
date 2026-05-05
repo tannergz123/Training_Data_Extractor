@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, CardBody, Flex, Text } from 'arc';
+import { Button, Card, CardBody, Flex, Text, VStack } from 'arc';
 import { downloadJson } from '../utils/download';
 
 type JsonPreviewPropsT = {
@@ -44,18 +44,11 @@ export function JsonPreview({ title, filename, data, note }: JsonPreviewPropsT) 
                     </Flex>
                 </Flex>
                 {expanded && (
-                    <div style={{
-                        marginTop: '12px',
-                        padding: '12px',
-                        backgroundColor: 'var(--arc-colors-surface-secondary)',
-                        borderRadius: '6px',
-                        overflow: 'auto',
-                        maxHeight: '400px',
-                    }}>
-                        <pre style={{ margin: 0, fontSize: '12px', fontFamily: 'var(--arc-fonts-mono, monospace)', whiteSpace: 'pre-wrap' }}>
+                    <VStack mt={3} p={3} bg="surface.secondary" borderRadius="md" align="stretch" maxH="400px" overflow="auto">
+                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap', font: 'var(--arc-fontSizes-xs) var(--arc-fonts-mono, monospace)' }}>
                             {preview}
                         </pre>
-                    </div>
+                    </VStack>
                 )}
             </CardBody>
         </Card>

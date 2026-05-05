@@ -6,12 +6,12 @@ export default function Header() {
         <ThemeProvider theme={dark}>
             <header>
                 <Flex alignItems="center" gap={4} px={6} py={3} bg="surface.foreground">
-                    <img src="./assets/mark43-logo.svg" alt="Mark43 Logo" style={{ height: '40px' }} />
-                    <div style={{ flex: 1 }}>
+                    <img src="./assets/mark43-logo-dark-mode.svg" alt="Mark43 Logo" height={40} />
+                    <Flex flex={1} alignItems="center" gap={2}>
                         <Text variant="headingMd" color="text.primary">
                             Training Data Extractor
                         </Text>
-                    </div>
+                    </Flex>
                     <Text variant="caption" color="text.secondary">v0.1.0</Text>
                 </Flex>
             </header>

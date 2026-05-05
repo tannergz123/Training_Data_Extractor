@@ -164,16 +164,14 @@ export function ExtractionForm() {
                 </CardBody>
             </Card>
 
-            <div>
-                <Button
-                    variant="solid"
-                    onClick={handleExtract}
-                    isDisabled={!isFormValid || state.phase === 'loading'}
-                    isLoading={state.phase === 'loading'}
-                >
-                    Extract Reports
-                </Button>
-            </div>
+            <Button
+                variant="solid"
+                onClick={handleExtract}
+                isDisabled={!isFormValid || state.phase === 'loading'}
+                isLoading={state.phase === 'loading'}
+            >
+                Extract Reports
+            </Button>
 
             {state.phase === 'error' && (
                 <InlineBanner status="error" description={state.message} />
