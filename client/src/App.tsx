@@ -1,27 +1,21 @@
-import { GlobalThemeProvider, Box, Flex, Text } from 'arc';
+import { GlobalThemeProvider, Text } from 'arc';
+import Header from './components/layout/Header';
 import { ExtractionForm } from './components/ExtractionForm';
 
 export function App() {
     return (
         <GlobalThemeProvider theme="light">
-            <Box minH="100vh" bg="surface.background">
-                <Flex bg="surface.foreground" p={4} alignItems="center" gap={2}>
-                    <img
-                        src="./assets/mark43-logo.svg"
-                        alt="Mark43"
-                        height={32}
-                    />
-                    <Text fontWeight="bold">Training Data Extractor</Text>
-                </Flex>
-                <Box p={4} maxWidth="800px">
-                    <Box mb={4}>
-                        <Text color="secondary">
+            <div style={{ minHeight: '100vh', backgroundColor: 'var(--arc-colors-surface-page)' }}>
+                <Header />
+                <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px 16px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                        <Text variant="caption" color="secondary">
                             Extract RMS report data into Blacksmith-compatible JSON files for training tenant population
                         </Text>
-                    </Box>
+                    </div>
                     <ExtractionForm />
-                </Box>
-            </Box>
+                </div>
+            </div>
         </GlobalThemeProvider>
     );
 }

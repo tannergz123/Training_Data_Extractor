@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, Flex, InlineBanner, Text } from 'arc';
+import { Button, Card, CardBody, Flex, FormControl, InlineBanner, Input, Text, Textarea, VStack } from 'arc';
 import { extractReports } from '../services/extractionApi';
 import { transformToBlacksmith } from '../transform';
 import type { TransformResultT, ApiReportT } from '../transform';
@@ -11,15 +11,6 @@ type ExtractionStateT =
     | { phase: 'loading' }
     | { phase: 'error'; message: string }
     | { phase: 'done'; result: TransformResultT; errors: string[] };
-
-const INPUT_STYLE: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 12px',
-    borderRadius: '4px',
-    border: '1px solid #ccc',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-};
 
 export function ExtractionForm() {
     const [tenantUrl, setTenantUrl] = useState('');
@@ -36,7 +27,7 @@ export function ExtractionForm() {
 
     const handleExtract = async () => {
         const ids = parseReportIds();
-        if (!tenantUrl.trim() || !apiToken.trim() || ids.length === 0 || !agencyOri.trim()) return;
+        if (!tenantUrl.trim() || !apiToken.trim() || ids.length === 0) return;
 
         setState({ phase: 'loading' });
 
@@ -84,110 +75,121 @@ export function ExtractionForm() {
     const isFormValid =
         tenantUrl.trim() !== '' &&
         apiToken.trim() !== '' &&
-        parseReportIds().length > 0 &&
-        agencyOri.trim() !== '';
+        parseReportIds().length > 0;
+
+    const reportIdCount = parseReportIds().length;
 
     return (
-        <Box>
-            <Box mb={4}>
-                <Box mb={3}>
-                    <Box mb={1}>
-                        <Text as="label" fontWeight="bold">Tenant URL</Text>
-                    </Box>
-                    <input
-                        type="url"
-                        placeholder="https://tenant.mark43.com"
-                        value={tenantUrl}
-                        onChange={(e) => setTenantUrl(e.target.value)}
-                        style={INPUT_STYLE}
-                    />
-                </Box>
-
-                <Box mb={3}>
-                    <Box mb={1}>
-                        <Text as="label" fontWeight="bold">API Token</Text>
-                    </Box>
-                    <input
-                        type="password"
-                        placeholder="Paste your API token"
-                        value={apiToken}
-                        onChange={(e) => setApiToken(e.target.value)}
-                        style={INPUT_STYLE}
-                    />
-                </Box>
-
-                <Box mb={3}>
-                    <Box mb={1}>
-                        <Text as="label" fontWeight="bold">Agency ORI</Text>
-                    </Box>
-                    <input
-                        type="text"
-                        placeholder="e.g. blacksmithori"
-                        value={agencyOri}
-                        onChange={(e) => setAgencyOri(e.target.value)}
-                        style={INPUT_STYLE}
-                    />
-                    <Box mt={1}>
-                        <Text color="secondary" fontSize="sm">
-                            The ORI string for the target Blacksmith tenant (not available from the V2 API)
+        <VStack align="stretch" gap={4}>
+            <Card>
+                <CardBody>
+                    <VStack align="stretch" gap={1} mb={4}>
+                        <Text variant="headingSm" fontWeight="bold">Connection</Text>
+                        <Text variant="caption" color="secondary">
+                            Enter the tenant URL and API token to connect to the RMS API
                         </Text>
-                    </Box>
-                </Box>
+                    </VStack>
 
-                <Box mb={3}>
-                    <Box mb={1}>
-                        <Text as="label" fontWeight="bold">Report ID(s)</Text>
-                    </Box>
-                    <textarea
-                        placeholder="Enter report IDs (comma-separated or one per line)"
-                        value={reportIds}
-                        onChange={(e) => setReportIds(e.target.value)}
-                        rows={4}
-                        style={{
-                            ...INPUT_STYLE,
-                            fontFamily: 'monospace',
-                            resize: 'vertical',
-                        }}
-                    />
-                    <Box mt={1}>
-                        <Text color="secondary" fontSize="sm">
-                            {parseReportIds().length} report ID(s) detected
+                    <VStack align="stretch" gap={4}>
+                        <FormControl
+                            label="Tenant URL"
+                            isRequired
+                            htmlFor="tenant_url"
+                            helpText="The Mark43 tenant URL (e.g. https://tenant.mark43.com)"
+                        >
+                            <Input
+                                id="tenant_url"
+                                value={tenantUrl}
+                                onChange={(e) => setTenantUrl(e.target.value)}
+                                placeholder="https://tenant.mark43.com"
+                            />
+                        </FormControl>
+
+                        <FormControl
+                            label="API Token"
+                            isRequired
+                            htmlFor="api_token"
+                            helpText="RMS super user token or any valid API token"
+                        >
+                            <Input
+                                id="api_token"
+                                type="password"
+                                value={apiToken}
+                                onChange={(e) => setApiToken(e.target.value)}
+                                placeholder="Paste your API token"
+                            />
+                        </FormControl>
+                    </VStack>
+                </CardBody>
+            </Card>
+
+            <Card>
+                <CardBody>
+                    <VStack align="stretch" gap={1} mb={4}>
+                        <Text variant="headingSm" fontWeight="bold">Report Selection</Text>
+                        <Text variant="caption" color="secondary">
+                            Enter the report IDs to extract and an optional agency ORI override
                         </Text>
-                    </Box>
-                </Box>
+                    </VStack>
 
+                    <VStack align="stretch" gap={4}>
+                        <FormControl
+                            label="Report ID(s)"
+                            isRequired
+                            htmlFor="report_ids"
+                            helpText={`${reportIdCount} report ID${reportIdCount !== 1 ? 's' : ''} detected — comma-separated or one per line`}
+                        >
+                            <Textarea
+                                id="report_ids"
+                                value={reportIds}
+                                onChange={(e) => setReportIds(e.target.value)}
+                                placeholder="652503723, 652503724"
+                                rows={3}
+                            />
+                        </FormControl>
+
+                        <FormControl
+                            label="Agency ORI"
+                            htmlFor="agency_ori"
+                            helpText="Optional — auto-extracted from the API response if available"
+                        >
+                            <Input
+                                id="agency_ori"
+                                value={agencyOri}
+                                onChange={(e) => setAgencyOri(e.target.value)}
+                                placeholder="e.g. NJNYPOA99"
+                            />
+                        </FormControl>
+                    </VStack>
+                </CardBody>
+            </Card>
+
+            <div>
                 <Button
+                    variant="solid"
                     onClick={handleExtract}
-                    disabled={!isFormValid || state.phase === 'loading'}
+                    isDisabled={!isFormValid || state.phase === 'loading'}
+                    isLoading={state.phase === 'loading'}
                 >
-                    {state.phase === 'loading' ? 'Extracting...' : 'Extract Reports'}
+                    Extract Reports
                 </Button>
-            </Box>
+            </div>
 
             {state.phase === 'error' && (
-                <Box mb={4}>
-                    <InlineBanner status="error">
-                        {state.message}
-                    </InlineBanner>
-                </Box>
+                <InlineBanner status="error" description={state.message} />
             )}
 
             {state.phase === 'done' && (
-                <Box>
+                <VStack align="stretch" gap={4}>
                     {state.errors.length > 0 && (
-                        <Box mb={4}>
-                            <InlineBanner status="attention">
-                                {state.errors.map((err, i) => (
-                                    <Text key={i} fontSize="sm">{err}</Text>
-                                ))}
-                            </InlineBanner>
-                        </Box>
+                        <InlineBanner
+                            status="attention"
+                            description={state.errors.join('\n')}
+                        />
                     )}
 
-                    <Flex justifyContent="space-between" alignItems="center" mb={3}>
-                        <Text as="h2" variant="headingMd">
-                            Output Files
-                        </Text>
+                    <Flex justifyContent="space-between" alignItems="center">
+                        <Text variant="headingMd" fontWeight="bold">Output Files</Text>
                         <Button variant="secondary" onClick={handleDownloadAll}>
                             Download All Files
                         </Button>
@@ -212,10 +214,10 @@ export function ExtractionForm() {
                         title="cases.json"
                         filename="cases.json"
                         data={state.result.cases}
-                        note="Empty for MVP -- case extraction coming in Phase 2"
+                        note="Empty for MVP — case extraction coming in Phase 2"
                     />
-                </Box>
+                </VStack>
             )}
-        </Box>
+        </VStack>
     );
 }
