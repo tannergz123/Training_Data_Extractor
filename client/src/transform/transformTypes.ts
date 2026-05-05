@@ -71,6 +71,7 @@ export type ApiReportT = {
     approvalStatus?: string;
     eventStartUtc?: string;
     eventEndUtc?: string;
+    agency?: { agencyOri?: string; agencyCode?: string; agencyName?: string; mark43Id?: number };
     data?: Record<string, unknown>;
     involvedPeople?: ApiInvolvedPersonT[];
     involvedProperties?: ApiInvolvedPropertyT[];

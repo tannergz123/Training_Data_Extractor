@@ -9,7 +9,7 @@ export function transformReport(
         reportingEventNumber: apiReport.reportingEventNumber,
         reportDefinitionName: apiReport.reportType,
         recordNumber: apiReport.recordNumber,
-        agencyOri,
+        agencyOri: apiReport.agency?.agencyOri ?? agencyOri,
         ...(apiReport.description ? { description: apiReport.description } : {}),
         isSealed: apiReport.isSealed ?? false,
         isNarrativeSealed: apiReport.isNarrativeSealed ?? false,
