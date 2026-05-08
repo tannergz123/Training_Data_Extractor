@@ -5,7 +5,7 @@ import { transformToBlacksmith } from '../transform';
 import type { TransformResultT, ApiReportT } from '../transform';
 import type { ApiCaseDetailsT } from '../transform/transformTypes';
 import { JsonPreview } from './JsonPreview';
-import { downloadJson } from '../utils/download';
+import { downloadJson, downloadAllAsZip } from '../utils/download';
 
 type ExtractionStateT =
     | { phase: 'idle' }
@@ -62,17 +62,23 @@ export function ExtractionForm() {
         }
     };
 
+    const getOutputFiles = () => [
+        { name: 'names.json', data: state.phase === 'done' ? state.result.names : [] },
+        { name: 'items.json', data: state.phase === 'done' ? state.result.items : [] },
+        { name: 'reports.json', data: state.phase === 'done' ? state.result.reports : [] },
+        { name: 'cases.json', data: state.phase === 'done' ? state.result.cases : [] },
+    ];
+
     const handleDownloadAll = () => {
         if (state.phase !== 'done') return;
-        const files = [
-            { name: 'names.json', data: state.result.names },
-            { name: 'items.json', data: state.result.items },
-            { name: 'reports.json', data: state.result.reports },
-            { name: 'cases.json', data: state.result.cases },
-        ];
-        for (const file of files) {
+        for (const file of getOutputFiles()) {
             downloadJson(file.data, file.name);
         }
+    };
+
+    const handleDownloadZip = () => {
+        if (state.phase !== 'done') return;
+        void downloadAllAsZip(getOutputFiles(), 'training-data.zip');
     };
 
     const isFormValid =
@@ -191,9 +197,14 @@ export function ExtractionForm() {
 
                     <Flex justifyContent="space-between" alignItems="center">
                         <Text variant="headingMd" fontWeight="bold">Output Files</Text>
-                        <Button variant="secondary" onClick={handleDownloadAll}>
-                            Download All Files
-                        </Button>
+                        <Flex gap={2}>
+                            <Button variant="solid" onClick={handleDownloadZip}>
+                                Download ZIP
+                            </Button>
+                            <Button variant="secondary" onClick={handleDownloadAll}>
+                                Download Individual Files
+                            </Button>
+                        </Flex>
                     </Flex>
 
                     <JsonPreview
