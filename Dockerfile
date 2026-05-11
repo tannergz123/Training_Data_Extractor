@@ -2,6 +2,7 @@
 
 # Stage 1: Build React frontend
 FROM node:22.22.2-alpine AS client-build
+ARG NPM_AUTH_TOKEN
 WORKDIR /app/client
 COPY client/package.json client/package-lock.json ./
 COPY .npmrc* ./
@@ -14,8 +15,7 @@ FROM node:22.22.2-alpine
 WORKDIR /app
 
 COPY server/package.json server/package-lock.json ./server/
-COPY .npmrc* ./server/
-RUN cd server && npm ci --omit=dev && rm -f .npmrc
+RUN cd server && npm ci --omit=dev
 
 COPY server/ ./server/
 COPY --from=client-build /app/client/dist ./client/dist
