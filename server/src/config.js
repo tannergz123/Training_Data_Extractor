@@ -17,6 +17,11 @@ const Config = {
     // Server port
     PORT: parseInt(process.env.PORT || '8080', 10),
 
+    // Simple auth — credentials from env vars. Leave unset to disable auth.
+    AUTH_USERNAME: process.env.AUTH_USERNAME || '',
+    AUTH_PASSWORD: process.env.AUTH_PASSWORD || '',
+    SESSION_SECRET: process.env.SESSION_SECRET || 'training-data-extractor-dev-secret',
+
     getFullBaseUrl() {
         if (this.MARK43_FULL_BASE_URL) return this.MARK43_FULL_BASE_URL;
         if (this.MARK43_BASE_URL) return `https://${this.MARK43_BASE_URL}.mark43.com`;

@@ -1,7 +1,11 @@
-import { Flex, Text, ThemeProvider } from 'arc';
+import { Button, Flex, Text, ThemeProvider } from 'arc';
 import { dark } from '@arc/core/dist/theme/token';
 
-export default function Header() {
+interface HeaderProps {
+    onLogout?: () => void;
+}
+
+export default function Header({ onLogout }: HeaderProps) {
     return (
         <ThemeProvider theme={dark}>
             <header>
@@ -12,6 +16,11 @@ export default function Header() {
                             Training Data Extractor
                         </Text>
                     </div>
+                    {onLogout && (
+                        <Button variant="ghost" size="sm" onClick={onLogout}>
+                            Sign Out
+                        </Button>
+                    )}
                     <Text variant="caption" color="text.secondary">v0.1.0</Text>
                 </Flex>
             </header>
