@@ -14,9 +14,9 @@ type ExtractionStateT =
     | { phase: 'done'; result: TransformResultT; errors: string[] };
 
 export function ExtractionForm() {
-    const [tenantUrl, setTenantUrl] = useState('');
-    const [apiToken, setApiToken] = useState('');
-    const [reportIds, setReportIds] = useState('');
+    const [tenantUrl, setTenantUrl] = useState('https://test-training-tenant-next5.qa.mark43.io');
+    const [apiToken, setApiToken] = useState('55quck20u1kfnnpkd557m9j2e3');
+    const [reportIds, setReportIds] = useState('659517081');
     const [agencyOri, setAgencyOri] = useState('');
     const [state, setState] = useState<ExtractionStateT>({ phase: 'idle' });
 

@@ -37,7 +37,7 @@ describe('transformReport', () => {
             approvalStatus: 'DRAFT',
             eventStartUtc: '2026-04-25T14:30:00+02:00',
             eventEndUtc: '2026-04-27T14:30:00+02:00',
-            personProfileIds: refs,
+            personProfileIds: ['10004', '10005'],
         });
     });
 
@@ -72,6 +72,6 @@ describe('transformReport', () => {
             { nameId: '200', linkType: 'SUSPECT_IN_REPORT' },
         ];
         const report = transformReport({}, 'ori', refs);
-        expect(report.personProfileIds).toEqual(refs);
+        expect(report.personProfileIds).toEqual(['100', '200']);
     });
 });

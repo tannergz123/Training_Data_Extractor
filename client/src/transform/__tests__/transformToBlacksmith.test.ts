@@ -96,16 +96,14 @@ describe('transformToBlacksmith', () => {
         expect(result.cases).toEqual([]);
     });
 
-    it('links report personProfileIds to REPORT-owned names with linkType', () => {
+    it('links report personProfileIds to REPORT-owned names', () => {
         const result = transformToBlacksmith([fullReport], 'blacksmithori');
-        const refs = result.reports[0].personProfileIds;
-        expect(refs).toHaveLength(2);
+        const ids = result.reports[0].personProfileIds;
+        expect(ids).toHaveLength(2);
 
-        for (const ref of refs) {
-            expect(ref.nameId).toBeDefined();
-            expect(ref.linkType).toBeDefined();
+        for (const id of ids) {
             const name = result.names.find(
-                (n) => n.personProfile.id === ref.nameId && n.personProfile.owner.entityType === 'REPORT',
+                (n) => n.personProfile.id === id && n.personProfile.owner.entityType === 'REPORT',
             );
             expect(name).toBeDefined();
         }
