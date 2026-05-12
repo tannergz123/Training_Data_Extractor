@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -7,6 +8,46 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const Config = require('./config');
 const apiRouter = require('./routes/api');
+
+// ---------------------------------------------------------------------------
+// Simple session store — maps token → expiry. Tokens live in a cookie.
+// ---------------------------------------------------------------------------
+const sessions = new Map();
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function createSession(res) {
+    const token = crypto.randomBytes(32).toString('hex');
+    sessions.set(token, Date.now() + SESSION_TTL_MS);
+    res.cookie('session', token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: SESSION_TTL_MS,
+        secure: process.env.NODE_ENV === 'production',
+    });
+    return token;
+}
+
+function isAuthenticated(req) {
+    const token = req.cookies?.session;
+    if (!token) return false;
+    const expiry = sessions.get(token);
+    if (!expiry || Date.now() > expiry) {
+        sessions.delete(token);
+        return false;
+    }
+    return true;
+}
+
+function authGuard(req, res, next) {
+    // Auth disabled when no credentials configured
+    if (!Config.AUTH_USERNAME || !Config.AUTH_PASSWORD) return next();
+    if (isAuthenticated(req)) return next();
+    // API requests get 401; page requests get redirected
+    if (req.path.startsWith('/api')) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    return next();
+}
 
 const app = express();
 
@@ -33,6 +74,21 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
 }));
 
+// ---------------------------------------------------------------------------
+// Cookie parser (lightweight, no dependency)
+// ---------------------------------------------------------------------------
+app.use((req, _res, next) => {
+    req.cookies = {};
+    const header = req.headers.cookie;
+    if (header) {
+        header.split(';').forEach((pair) => {
+            const [name, ...rest] = pair.trim().split('=');
+            if (name) req.cookies[name.trim()] = decodeURIComponent(rest.join('='));
+        });
+    }
+    next();
+});
+
 // Health endpoint registered BEFORE rate limiter — k8s probes hit this every
 // 10-30 seconds and will exhaust the rate limit, causing 429s on liveness
 // probes → pod restarts → crash loops.
@@ -49,6 +105,38 @@ app.use('/api', apiLimiter);
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// ---------------------------------------------------------------------------
+// Auth endpoints — login, logout, session check
+// ---------------------------------------------------------------------------
+app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === Config.AUTH_USERNAME && password === Config.AUTH_PASSWORD) {
+        createSession(res);
+        return res.json({ success: true });
+    }
+    return res.status(401).json({ message: 'Invalid username or password' });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    const token = req.cookies?.session;
+    if (token) sessions.delete(token);
+    res.clearCookie('session');
+    res.json({ success: true });
+});
+
+app.get('/api/auth/check', (req, res) => {
+    // Auth disabled — always authenticated
+    if (!Config.AUTH_USERNAME || !Config.AUTH_PASSWORD) {
+        return res.json({ authenticated: true, authEnabled: false });
+    }
+    return res.json({ authenticated: isAuthenticated(req), authEnabled: true });
+});
+
+// ---------------------------------------------------------------------------
+// Auth guard — protects API routes and SPA
+// ---------------------------------------------------------------------------
+app.use(authGuard);
 
 // ---------------------------------------------------------------------------
 // API routes
