@@ -101,6 +101,27 @@ function logError(label, err) {
 // Case fetching helpers
 // ---------------------------------------------------------------------------
 
+// Cache role names by ID to avoid repeated lookups
+const roleNameCache = new Map();
+
+async function resolveRoleName(baseUrl, headers, roleId) {
+    if (!roleId) return '';
+    const key = String(roleId);
+    if (roleNameCache.has(key)) return roleNameCache.get(key);
+
+    try {
+        const url = `${baseUrl}/rms/api/admin/role/${encodeURIComponent(roleId)}`;
+        const resp = await axios.get(url, { headers, timeout: 10000 });
+        const name = resp.data?.data?.name ?? resp.data?.name ?? key;
+        roleNameCache.set(key, name);
+        return name;
+    } catch (err) {
+        logError('resolve_role', err);
+        roleNameCache.set(key, key);
+        return key;
+    }
+}
+
 async function fetchCasesForReport(baseUrl, headers, reportId) {
     const cases = [];
 
@@ -129,9 +150,12 @@ async function fetchCasesForReport(baseUrl, headers, reportId) {
                     const cas = details.caseApprovalStatus;
                     if (typeof cas === 'string') caseApprovalStatus = cas;
                     else if (cas?.status) caseApprovalStatus = cas.status;
-                    entityPermissions = (details.entityPermissions ?? [])
-                        .filter((p) => p.operationType)
-                        .map((p) => ({ roleId: p.roleId, operationType: p.operationType }));
+                    const rawPerms = (details.entityPermissions ?? []).filter((p) => p.operationType);
+                    entityPermissions = [];
+                    for (const p of rawPerms) {
+                        const roleName = await resolveRoleName(baseUrl, headers, p.roleId);
+                        entityPermissions.push({ roleName, operationType: p.operationType });
+                    }
                 }
             } catch (err) {
                 logError('case_details', err);
@@ -169,11 +193,12 @@ async function fetchCasesForReport(baseUrl, headers, reportId) {
                         }
                     }
 
+                    const assignedRoleName = await resolveRoleName(baseUrl, headers, task.assigneeRoleId);
                     tasks.push({
                         id: String(task.id),
                         title: task.title ?? '',
                         recordNumber: task.recordNumber ?? '',
-                        assignedRoleName: task.assigneeRoleId ? String(task.assigneeRoleId) : '',
+                        assignedRoleName,
                         taskListId: String(task.taskListId ?? task.ownerId ?? ''),
                         statusAttributeDisplayAbbreviation: taskStatusAbbr,
                     });

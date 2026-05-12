@@ -33,9 +33,9 @@ export function transformCases(
                     ? { statusAttributeDisplayAbbreviation: String(detail.caseStatus.statusAttrId) }
                     : {}),
             entityPermissions: (detail.entityPermissions ?? [])
-                .filter((p) => p.operationType != null)
+                .filter((p) => p.operationType != null && p.roleName)
                 .map((p) => ({
-                    roleName: p.roleId != null ? String(p.roleId) : '',
+                    roleName: p.roleName ?? '',
                     operationType: p.operationType ?? '',
                 })),
             personProfileIds,

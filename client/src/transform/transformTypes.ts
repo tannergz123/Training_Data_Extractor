@@ -155,7 +155,7 @@ export type ApiCaseDetailsT = {
     };
     caseStatus?: { id: number; statusAttrId?: number; displayAbbreviation?: string };
     caseRoleLinks?: Array<{ roleId?: number; caseRoleAttrId?: number }>;
-    entityPermissions?: Array<{ roleId?: number; entityType?: string; operationType?: string }>;
+    entityPermissions?: Array<{ roleName?: string; operationType?: string }>;
     caseApprovalStatus?: { status?: string } | string;
     caseDefinitionName?: string;
     tasks?: Array<Record<string, unknown>>;

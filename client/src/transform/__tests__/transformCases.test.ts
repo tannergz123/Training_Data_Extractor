@@ -17,7 +17,7 @@ describe('transformCases', () => {
                 caseApprovalStatus: { status: 'DRAFT' },
                 caseStatus: { id: 1, statusAttrId: 12344 },
                 entityPermissions: [
-                    { roleId: 999, operationType: 'MANAGE' },
+                    { roleName: 'ADMIN', operationType: 'MANAGE' },
                 ],
             },
         ];
@@ -33,7 +33,7 @@ describe('transformCases', () => {
             reportingEventNumber: '4295294714',
             approvalStatus: 'DRAFT',
             statusAttributeDisplayAbbreviation: '12344',
-            entityPermissions: [{ roleName: '999', operationType: 'MANAGE' }],
+            entityPermissions: [{ roleName: 'ADMIN', operationType: 'MANAGE' }],
             personProfileIds: [],
             reportRens: ['4295294714'],
             tasks: [],
@@ -100,13 +100,13 @@ describe('transformCases', () => {
         expect(cases[0].statusAttributeDisplayAbbreviation).toBeUndefined();
     });
 
-    it('maps entityPermissions with roleId to string roleName', () => {
+    it('passes through resolved roleName in entityPermissions', () => {
         const caseDetails: ApiCaseDetailsT[] = [
             {
                 theCase: { id: 500, title: 'Perms Test' },
                 entityPermissions: [
-                    { roleId: 123, operationType: 'MANAGE' },
-                    { roleId: 456, operationType: 'READ' },
+                    { roleName: 'ADMIN', operationType: 'MANAGE' },
+                    { roleName: 'Patrol Officer', operationType: 'READ' },
                     { operationType: undefined } as never,
                 ],
             },
@@ -115,8 +115,8 @@ describe('transformCases', () => {
         const cases = transformCases(caseDetails, 'REN', [], createIdGenerator());
 
         expect(cases[0].entityPermissions).toEqual([
-            { roleName: '123', operationType: 'MANAGE' },
-            { roleName: '456', operationType: 'READ' },
+            { roleName: 'ADMIN', operationType: 'MANAGE' },
+            { roleName: 'Patrol Officer', operationType: 'READ' },
         ]);
     });
 
