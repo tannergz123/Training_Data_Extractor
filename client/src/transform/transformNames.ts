@@ -3,6 +3,7 @@ import type { ApiInvolvedPersonT, BlacksmithNameEntryT, IdGeneratorT } from './t
 type PersonIdsT = {
     masterId: string;
     reportId: string;
+    linkType: string;
     caseIds: string[];
 };
 
@@ -24,6 +25,7 @@ export function transformNames(
         const masterId = nextId();
         const reportId = nextId();
         const personCaseIds: string[] = [];
+        const linkType = person.nameReportLink?.linkType ?? 'SUSPECT_IN_REPORT';
 
         const baseFields = {
             firstName: profile.firstName,
@@ -67,7 +69,7 @@ export function transformNames(
             });
         }
 
-        personIdMap.push({ masterId, reportId, caseIds: personCaseIds });
+        personIdMap.push({ masterId, reportId, linkType, caseIds: personCaseIds });
     }
 
     return { names: [...masters, ...reportCopies, ...caseCopies], personIdMap };

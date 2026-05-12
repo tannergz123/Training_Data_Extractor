@@ -23,6 +23,7 @@ type ApiPersonProfileT = {
 
 export type ApiInvolvedPersonT = {
     personProfile?: ApiPersonProfileT;
+    nameReportLink?: { linkType?: string };
 };
 
 type ApiFirearmT = {
@@ -142,7 +143,7 @@ export type BlacksmithReportT = {
     approvalStatus?: string;
     eventStartUtc?: string;
     eventEndUtc?: string;
-    personProfileIds: string[];
+    personProfileIds: Array<{ nameId: string; linkType: string }>;
 };
 
 export type ApiCaseDetailsT = {

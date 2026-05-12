@@ -18,7 +18,11 @@ describe('transformReport', () => {
             data: { field1: 'value1', field2: 42 },
         };
 
-        const report = transformReport(apiReport, 'blacksmithori', ['10004', '10005']);
+        const refs = [
+            { nameId: '10004', linkType: 'VICTIM_IN_REPORT' },
+            { nameId: '10005', linkType: 'SUSPECT_IN_REPORT' },
+        ];
+        const report = transformReport(apiReport, 'blacksmithori', refs);
 
         expect(report).toEqual({
             reportingEventNumber: '4295294714',
@@ -29,11 +33,11 @@ describe('transformReport', () => {
             isSealed: false,
             isNarrativeSealed: false,
             isLegacyReport: false,
-            formsData: { field1: 'value1', field2: 42 },
+            formsData: { field1: 'value1', field2: 42, victim: '<name10004>' },
             approvalStatus: 'DRAFT',
             eventStartUtc: '2026-04-25T14:30:00+02:00',
             eventEndUtc: '2026-04-27T14:30:00+02:00',
-            personProfileIds: ['10004', '10005'],
+            personProfileIds: refs,
         });
     });
 
@@ -63,7 +67,11 @@ describe('transformReport', () => {
     });
 
     it('sets personProfileIds from provided array', () => {
-        const report = transformReport({}, 'ori', ['100', '200', '300']);
-        expect(report.personProfileIds).toEqual(['100', '200', '300']);
+        const refs = [
+            { nameId: '100', linkType: 'VICTIM_IN_REPORT' },
+            { nameId: '200', linkType: 'SUSPECT_IN_REPORT' },
+        ];
+        const report = transformReport({}, 'ori', refs);
+        expect(report.personProfileIds).toEqual(refs);
     });
 });

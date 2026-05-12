@@ -96,14 +96,16 @@ describe('transformToBlacksmith', () => {
         expect(result.cases).toEqual([]);
     });
 
-    it('links report personProfileIds to REPORT-owned names', () => {
+    it('links report personProfileIds to REPORT-owned names with linkType', () => {
         const result = transformToBlacksmith([fullReport], 'blacksmithori');
-        const reportPersonIds = result.reports[0].personProfileIds;
-        expect(reportPersonIds).toHaveLength(2);
+        const refs = result.reports[0].personProfileIds;
+        expect(refs).toHaveLength(2);
 
-        for (const id of reportPersonIds) {
+        for (const ref of refs) {
+            expect(ref.nameId).toBeDefined();
+            expect(ref.linkType).toBeDefined();
             const name = result.names.find(
-                (n) => n.personProfile.id === id && n.personProfile.owner.entityType === 'REPORT',
+                (n) => n.personProfile.id === ref.nameId && n.personProfile.owner.entityType === 'REPORT',
             );
             expect(name).toBeDefined();
         }
@@ -111,7 +113,7 @@ describe('transformToBlacksmith', () => {
 
     it('maps formsData from data field', () => {
         const result = transformToBlacksmith([fullReport], 'blacksmithori');
-        expect(result.reports[0].formsData).toEqual({ filersOfficerName: 'Storm, Peter' });
+        expect(result.reports[0].formsData?.filersOfficerName).toBe('Storm, Peter');
     });
 
     it('maps reportType to reportDefinitionName', () => {

@@ -49,8 +49,11 @@ export function transformToBlacksmith(
         );
         result.items.push(...items);
 
-        const reportPersonProfileIds = personIdMap.map((ids) => ids.reportId);
-        const report = transformReport(apiReport, agencyOri, reportPersonProfileIds);
+        const personProfileRefs = personIdMap.map((ids) => ({
+            nameId: ids.reportId,
+            linkType: ids.linkType,
+        }));
+        const report = transformReport(apiReport, agencyOri, personProfileRefs);
         result.reports.push(report);
 
         for (let ci = 0; ci < caseResults.length; ci++) {
