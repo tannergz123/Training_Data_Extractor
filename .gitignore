@@ -2,7 +2,7 @@
 node_modules/
 
 # Build output
-client/dist/
+# client/dist/ is committed for Railway (pre-built locally to avoid Artifactory auth)
 server/dist/
 
 # Local environment
