@@ -43,10 +43,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 <CardBody>
                     <form onSubmit={handleSubmit}>
                         <VStack spacing={4}>
-                            <Text variant="title3">Sign In</Text>
+                            <Text variant="headingMd">Sign In</Text>
 
                             {error && (
-                                <Text color="error" variant="body2">{error}</Text>
+                                <Text color="negative" variant="bodyMd">{error}</Text>
                             )}
 
                             <FormControl label="Username">
