@@ -110,21 +110,92 @@ async function fetchCasesForReport(baseUrl, headers, reportId) {
         const relatedResp = await axios.get(relatedUrl, { headers, timeout: 30000 });
         logResponse('related_entities', relatedResp.status, relatedResp.data);
 
-        const linkedCaseIds = relatedResp.data?.data?.linkedCaseIds ?? [];
-        if (linkedCaseIds.length === 0) return cases;
+        const caseTitles = relatedResp.data?.data?.caseTitles ?? [];
+        if (caseTitles.length === 0) return cases;
 
-        for (const caseId of linkedCaseIds) {
+        // Try case details endpoint first for full data (including approval status).
+        // Fall back to caseTitles if the details call fails (permissions, 500, etc.).
+        for (const ct of caseTitles) {
+            let caseApprovalStatus = 'DRAFT';
+            let entityPermissions = [];
+
             try {
-                const caseUrl = `${baseUrl}/rms/api/cases/${encodeURIComponent(caseId)}/details`;
+                const caseUrl = `${baseUrl}/rms/api/cases/${encodeURIComponent(ct.caseId)}/details`;
                 logRequest('case_details', 'GET', caseUrl, headers, {}, undefined);
                 const caseResp = await axios.get(caseUrl, { headers, timeout: 30000 });
                 logResponse('case_details', caseResp.status, caseResp.data);
-                if (caseResp.data?.data) {
-                    cases.push(caseResp.data.data);
+                const details = caseResp.data?.data;
+                if (details) {
+                    const cas = details.caseApprovalStatus;
+                    if (typeof cas === 'string') caseApprovalStatus = cas;
+                    else if (cas?.status) caseApprovalStatus = cas.status;
+                    entityPermissions = (details.entityPermissions ?? [])
+                        .filter((p) => p.operationType)
+                        .map((p) => ({ roleId: p.roleId, operationType: p.operationType }));
                 }
             } catch (err) {
                 logError('case_details', err);
             }
+
+            // Resolve caseStatusAttrId to display abbreviation
+            let statusDisplayAbbreviation;
+            if (ct.caseStatusAttrId) {
+                try {
+                    const attrUrl = `${baseUrl}/rms/api/attributes/${encodeURIComponent(ct.caseStatusAttrId)}`;
+                    const attrResp = await axios.get(attrUrl, { headers, timeout: 10000 });
+                    statusDisplayAbbreviation = attrResp.data?.data?.displayAbbreviation ?? String(ct.caseStatusAttrId);
+                } catch (err) {
+                    statusDisplayAbbreviation = String(ct.caseStatusAttrId);
+                }
+            }
+
+            // Fetch case tasks and resolve attribute IDs
+            let tasks = [];
+            try {
+                const tasksUrl = `${baseUrl}/rms/api/cases/${encodeURIComponent(ct.caseId)}/tasks`;
+                const tasksResp = await axios.get(tasksUrl, { headers, timeout: 10000 });
+                const rawTasks = tasksResp.data?.data ?? [];
+
+                for (const task of rawTasks) {
+                    // Resolve statusAttrId to display abbreviation
+                    let taskStatusAbbr = '';
+                    if (task.statusAttrId) {
+                        try {
+                            const attrUrl = `${baseUrl}/rms/api/attributes/${encodeURIComponent(task.statusAttrId)}`;
+                            const attrResp = await axios.get(attrUrl, { headers, timeout: 10000 });
+                            taskStatusAbbr = attrResp.data?.data?.displayAbbreviation ?? String(task.statusAttrId);
+                        } catch (err) {
+                            taskStatusAbbr = String(task.statusAttrId);
+                        }
+                    }
+
+                    tasks.push({
+                        id: String(task.id),
+                        title: task.title ?? '',
+                        recordNumber: task.recordNumber ?? '',
+                        assignedRoleName: task.assigneeRoleId ? String(task.assigneeRoleId) : '',
+                        taskListId: String(task.taskListId ?? task.ownerId ?? ''),
+                        statusAttributeDisplayAbbreviation: taskStatusAbbr,
+                    });
+                }
+            } catch (err) {
+                logError('case_tasks', err);
+            }
+
+            cases.push({
+                theCase: {
+                    id: ct.caseId,
+                    title: ct.title,
+                    localId: ct.localId,
+                    caseDefinitionId: ct.caseDefinitionId,
+                    reportingEventNumber: ct.reportingEventNumber,
+                },
+                caseApprovalStatus,
+                caseStatus: statusDisplayAbbreviation ? { id: 0, statusAttrId: ct.caseStatusAttrId, displayAbbreviation: statusDisplayAbbreviation } : undefined,
+                entityPermissions,
+                caseDefinitionName: ct.caseDefinitionName,
+                tasks,
+            });
         }
     } catch (err) {
         logError('related_entities', err);

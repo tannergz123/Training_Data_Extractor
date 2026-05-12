@@ -153,10 +153,12 @@ export type ApiCaseDetailsT = {
         caseDefinitionId?: number;
         reportingEventNumber?: string;
     };
-    caseStatus?: { id: number; statusAttrId?: number };
+    caseStatus?: { id: number; statusAttrId?: number; displayAbbreviation?: string };
     caseRoleLinks?: Array<{ roleId?: number; caseRoleAttrId?: number }>;
     entityPermissions?: Array<{ roleId?: number; entityType?: string; operationType?: string }>;
     caseApprovalStatus?: { status?: string } | string;
+    caseDefinitionName?: string;
+    tasks?: Array<Record<string, unknown>>;
 };
 
 export type BlacksmithCaseT = {

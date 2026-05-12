@@ -24,12 +24,14 @@ export function transformCases(
             id: caseId,
             title: theCase.title ?? '',
             localId: theCase.localId ?? '',
-            caseDefinitionName: theCase.title ?? '',
+            caseDefinitionName: detail.caseDefinitionName ?? theCase.title ?? '',
             reportingEventNumber: theCase.reportingEventNumber ?? reportRen,
             approvalStatus: extractApprovalStatus(detail.caseApprovalStatus),
-            ...(detail.caseStatus?.statusAttrId != null
-                ? { statusAttributeDisplayAbbreviation: String(detail.caseStatus.statusAttrId) }
-                : {}),
+            ...(detail.caseStatus?.displayAbbreviation
+                ? { statusAttributeDisplayAbbreviation: detail.caseStatus.displayAbbreviation }
+                : detail.caseStatus?.statusAttrId != null
+                    ? { statusAttributeDisplayAbbreviation: String(detail.caseStatus.statusAttrId) }
+                    : {}),
             entityPermissions: (detail.entityPermissions ?? [])
                 .filter((p) => p.operationType != null)
                 .map((p) => ({
@@ -38,7 +40,7 @@ export function transformCases(
                 })),
             personProfileIds,
             reportRens: [theCase.reportingEventNumber ?? reportRen].filter(Boolean),
-            tasks: [],
+            tasks: detail.tasks ?? [],
         });
     }
 
