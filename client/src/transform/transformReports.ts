@@ -67,6 +67,6 @@ export function transformReport(
         approvalStatus: apiReport.approvalStatus ?? 'DRAFT',
         ...(apiReport.eventStartUtc ? { eventStartUtc: apiReport.eventStartUtc } : {}),
         ...(apiReport.eventEndUtc ? { eventEndUtc: apiReport.eventEndUtc } : {}),
-        personProfileIds: personProfileRefs,
+        personProfileIds: personProfileRefs.map((p) => p.nameId),
     };
 }

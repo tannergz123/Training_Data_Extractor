@@ -143,7 +143,7 @@ export type BlacksmithReportT = {
     approvalStatus?: string;
     eventStartUtc?: string;
     eventEndUtc?: string;
-    personProfileIds: Array<{ nameId: string; linkType: string }>;
+    personProfileIds: string[];
 };
 
 export type ApiCaseDetailsT = {
